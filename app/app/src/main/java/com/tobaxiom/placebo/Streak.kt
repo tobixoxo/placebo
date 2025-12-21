@@ -3,7 +3,7 @@ package com.tobaxiom.placebo
 import java.time.LocalDate
 import java.util.UUID
 
-class Streak(var name: String){
+class Streak(var name: String) {
     var id: UUID = UUID.randomUUID()
     var markedDays = mutableListOf<LocalDate>()
 
