@@ -23,42 +23,65 @@
         android:id="@+id/tvStreaks"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Streaks"
+        android:text="Streak Name"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/materialToolbar"
         app:layout_constraintEnd_toEndOf="@+id/materialToolbar"
         app:layout_constraintStart_toStartOf="@+id/materialToolbar"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="409dp"
-        android:layout_height="665dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+    <TextView
+        android:id="@+id/tvCurrentStreakLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="48dp"
+        android:text="Current Streak:"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/materialToolbar" />
 
     <TextView
-        android:id="@+id/tvNoStreaks"
+        android:id="@+id/tvLongestStreakLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Click on the '+' below to create a streak"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/materialToolbar" />
+        android:layout_marginTop="32dp"
+        android:text="Longest Streak:"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="@+id/tvCurrentStreakLabel"
+        app:layout_constraintTop_toBottomOf="@+id/tvCurrentStreakLabel" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addStreakButton"
+    <TextView
+        android:id="@+id/tvCurrentStreakValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="48dp"
+        android:layout_marginStart="32dp"
+        android:text="7"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/tvCurrentStreakLabel"
+        app:layout_constraintStart_toEndOf="@+id/tvCurrentStreakLabel"
+        app:layout_constraintTop_toTopOf="@+id/tvCurrentStreakLabel" />
+
+    <TextView
+        android:id="@+id/tvLongestStreakValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="9"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/tvLongestStreakLabel"
+        app:layout_constraintStart_toStartOf="@+id/tvCurrentStreakValue"
+        app:layout_constraintTop_toTopOf="@+id/tvLongestStreakLabel" />
+
+    <ToggleButton
+        android:id="@+id/tbMarkToday"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginBottom="48dp"
-        android:clickable="true"
+        android:textOff="Mark for Today"
+        android:textOn="Marked"
+        android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@android:drawable/ic_input_add" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
