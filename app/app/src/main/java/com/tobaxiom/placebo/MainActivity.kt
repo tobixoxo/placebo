@@ -27,6 +27,14 @@ class MainActivity : AppCompatActivity() {
         streaksRV = findViewById(R.id.rvStreaksList)
         tvNoStreaks = findViewById(R.id.tvNoStreaks)
 
+        if (streaks.isEmpty()) {
+            streaksRV.visibility = View.GONE
+            tvNoStreaks.visibility = View.VISIBLE
+        } else {
+            streaksRV.visibility = View.VISIBLE
+            tvNoStreaks.visibility = View.GONE
+        }
+
         streaksRV.layoutManager = LinearLayoutManager(this)
         streaksRV.adapter = StreaksRVAdapter(streaks)
 

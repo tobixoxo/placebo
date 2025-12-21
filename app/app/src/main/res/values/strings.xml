@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Placebo</string>
+    <string name="streaks_page_heading">Streaks</string>
+    <string name="add_button_content_description">Add a new streak</string>
+    <string name="no_streaks_text">Click on the \'+\' below to create a streak</string>
+    <string name="streak_view_header">Streak Name</string>
 </resources>

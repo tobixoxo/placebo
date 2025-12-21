@@ -9,7 +9,7 @@
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/materialToolbar"
-        android:layout_width="409dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
@@ -23,18 +23,17 @@
         android:id="@+id/tvStreaks"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Streaks"
+        android:text="@string/streaks_page_heading"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/materialToolbar"
         app:layout_constraintEnd_toEndOf="@+id/materialToolbar"
         app:layout_constraintStart_toStartOf="@+id/materialToolbar"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/materialToolbar" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvStreaksList"
-        android:layout_width="409dp"
-        android:layout_height="665dp"
-        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,7 +43,7 @@
         android:id="@+id/tvNoStreaks"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Click on the '+' below to create a streak"
+        android:text="@string/no_streaks_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -57,6 +56,7 @@
         android:layout_marginEnd="48dp"
         android:layout_marginBottom="48dp"
         android:clickable="true"
+        android:contentDescription="@string/add_button_content_description"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@android:drawable/ic_input_add" />
