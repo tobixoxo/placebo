@@ -10,43 +10,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.tobaxiom.placebo.streaksList.StreaksListFragment
 
+// TODO: move material toolbar in both fragments to the main activity xml, then add a back button to it
 class MainActivity : AppCompatActivity() {
-    lateinit var addButton: FloatingActionButton
-    lateinit var streaksRV: RecyclerView
-    lateinit var tvNoStreaks: TextView
-
-    var streaks = mutableListOf<Streak>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        addButton = findViewById(R.id.addStreakButton)
-        streaksRV = findViewById(R.id.rvStreaksList)
-        tvNoStreaks = findViewById(R.id.tvNoStreaks)
-
-        if (streaks.isEmpty()) {
-            streaksRV.visibility = View.GONE
-            tvNoStreaks.visibility = View.VISIBLE
-        } else {
-            streaksRV.visibility = View.VISIBLE
-            tvNoStreaks.visibility = View.GONE
-        }
-
-        streaksRV.layoutManager = LinearLayoutManager(this)
-        streaksRV.adapter = StreaksRVAdapter(streaks)
-
-        addButton.setOnClickListener { view ->
-            streaks.add(Streak("abcd"))
-            streaksRV.adapter?.notifyItemInserted(streaks.size - 1)
-            Log.i("main", "clicked add")
-
-            if (!streaksRV.isVisible) {
-                streaksRV.visibility = View.VISIBLE
-                tvNoStreaks.visibility = View.GONE
-            }
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, StreaksListFragment())
+                .commit()
         }
     }
 }

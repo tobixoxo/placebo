@@ -1,4 +1,4 @@
-package com.tobaxiom.placebo
+package com.tobaxiom.placebo.streaksList
 
 import android.util.Log
 import android.view.LayoutInflater
@@ -6,13 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.tobaxiom.placebo.R
+import com.tobaxiom.placebo.Streak
 
-class StreaksRVAdapter(val streaks: MutableList<Streak>): RecyclerView.Adapter<StreaksRVAdapter.StreakRVItemViewHolder>() {
+class StreaksRVAdapter(val streaks: MutableList<Streak>, val streakOnClickListener: (Streak) -> Unit): RecyclerView.Adapter<StreaksRVAdapter.StreakRVItemViewHolder>() {
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): StreakRVItemViewHolder {
-        Log.i("adapter", "on create")
         val view = LayoutInflater.from(parent.getContext()).inflate(R.layout.streak_rv_item, parent, false)
         return StreakRVItemViewHolder(view)
     }
@@ -21,16 +22,19 @@ class StreaksRVAdapter(val streaks: MutableList<Streak>): RecyclerView.Adapter<S
         holder: StreakRVItemViewHolder,
         position: Int
     ) {
-        Log.i("adapter", "on bind")
-        holder.streakName.text = streaks[position].name
+        val streak = streaks[position]
+        holder.streakName.text = streak.name
+        holder.setOnClickListener(streak)
     }
 
     override fun getItemCount(): Int {
-        Log.i("adapter", "get item count")
         return streaks.size
     }
 
-    class StreakRVItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+    inner class StreakRVItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val streakName: TextView = itemView.findViewById(R.id.tvStreakName)
+        fun setOnClickListener(streak: Streak) {
+            itemView.setOnClickListener { streakOnClickListener(streak) }
+        }
     }
 }

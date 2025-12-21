@@ -1,0 +1,57 @@
+package com.tobaxiom.placebo.streaksList
+
+import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.TextView
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.tobaxiom.placebo.R
+import com.tobaxiom.placebo.Streak
+import com.tobaxiom.placebo.streakView.StreakViewFragment
+import com.tobaxiom.placebo.streaksList.StreaksRVAdapter
+
+class StreaksListFragment: Fragment(R.layout.streaks_list_view) {
+    lateinit var addButton: FloatingActionButton
+    lateinit var streaksRV: RecyclerView
+    lateinit var tvNoStreaks: TextView
+
+    var streaks = mutableListOf<Streak>()
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        addButton = view.findViewById(R.id.addStreakButton)
+        streaksRV = view.findViewById(R.id.rvStreaksList)
+        tvNoStreaks = view.findViewById(R.id.tvNoStreaks)
+
+        if (streaks.isEmpty()) {
+            streaksRV.visibility = View.GONE
+            tvNoStreaks.visibility = View.VISIBLE
+        } else {
+            streaksRV.visibility = View.VISIBLE
+            tvNoStreaks.visibility = View.GONE
+        }
+
+        streaksRV.layoutManager = LinearLayoutManager(requireContext())
+        streaksRV.adapter = StreaksRVAdapter(streaks, this::navigateToStreakView)
+
+        addButton.setOnClickListener { view ->
+            streaks.add(Streak("abcd"))
+            streaksRV.adapter?.notifyItemInserted(streaks.size - 1)
+
+            if (!streaksRV.isVisible) {
+                streaksRV.visibility = View.VISIBLE
+                tvNoStreaks.visibility = View.GONE
+            }
+        }
+    }
+
+    fun navigateToStreakView(streak: Streak) {
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, StreakViewFragment(streak))
+            .addToBackStack(null)
+            .commit();
+    }
+}
