@@ -16,7 +16,7 @@ class StreakViewFragment(val streak: Streak): Fragment(R.layout.streak_view) {
     lateinit var tbMarkToday: ToggleButton
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        heading = view.findViewById(R.id.tvStreakName)
+        heading = view.findViewById(R.id.heading)
         tvCurrentStreakValue = view.findViewById(R.id.tvCurrentStreakValue)
         tvLongestStreakValue = view.findViewById(R.id.tvLongestStreakValue)
         tbMarkToday = view.findViewById(R.id.tbMarkToday)
