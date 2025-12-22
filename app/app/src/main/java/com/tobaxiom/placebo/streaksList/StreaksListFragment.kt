@@ -39,6 +39,7 @@ class StreaksListFragment: Fragment(R.layout.streaks_list_view) {
         streaksRV.adapter = StreaksRVAdapter(streaks, this::navigateToStreakView)
 
         addButton.setOnClickListener { view ->
+            // TODO: this streak name should be an editable input
             streaks.add(Streak("abcd"))
             streaksRV.adapter?.notifyItemInserted(streaks.size - 1)
 
@@ -53,7 +54,7 @@ class StreaksListFragment: Fragment(R.layout.streaks_list_view) {
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, StreakViewFragment(streak))
             .addToBackStack(null)
-            .commit();
+            .commit()
 
         (requireActivity() as AppCompatActivity)
             .supportActionBar?.setDisplayHomeAsUpEnabled(true)

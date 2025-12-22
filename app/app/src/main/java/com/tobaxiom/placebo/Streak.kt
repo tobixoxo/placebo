@@ -37,7 +37,7 @@ class Streak(var name: String) {
         var maxStreakLen = 0;
         var streakLen = 1
         var prevDay: LocalDate = markedDays[0]
-        for (day in markedDays.sortedDescending()){
+        for (day in markedDays.sortedDescending()) {
             if (day.minusDays(1).equals(prevDay)) {
                 streakLen++
                 prevDay = day
