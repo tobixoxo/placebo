@@ -57,9 +57,13 @@ class StreaksListFragment: Fragment(R.layout.streaks_list_view) {
 
     fun removeStreak(streak: Streak) {
         Log.i("StreakListFragment", "removing streak=$streak, i=${streaks.indexOf(streak)}, streaks=$streaks")
+
+        val streakPosition = streaks.indexOf(streak)
         streaks.remove(streak)
+
         Log.i("StreakListFragment", "streaks=$streaks")
-        streaksRV.adapter?.notifyItemRemoved(streaks.indexOf(streak))
+
+        streaksRV.adapter?.notifyItemRemoved(streakPosition)
 
         if (!streaksRV.isVisible) {
             streaksRV.visibility = View.VISIBLE

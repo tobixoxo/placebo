@@ -19,7 +19,8 @@ class Streak(var name: String) {
 
         other as Streak
 
-        return id != other.id
+        Log.i("abc", "$this.equals($other)")
+        return id == other.id
     }
 
     override fun hashCode(): Int {
