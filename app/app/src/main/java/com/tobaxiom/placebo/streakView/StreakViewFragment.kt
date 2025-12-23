@@ -8,6 +8,7 @@ import android.widget.ToggleButton
 import androidx.fragment.app.Fragment
 import com.tobaxiom.placebo.R
 import com.tobaxiom.placebo.Streak
+import java.time.LocalDate
 
 class StreakViewFragment(val streak: Streak): Fragment(R.layout.streak_view) {
     lateinit var heading: TextView
@@ -26,10 +27,12 @@ class StreakViewFragment(val streak: Streak): Fragment(R.layout.streak_view) {
         tvCurrentStreakValue.text = streak.getCurrentStreak().toString()
 
         tbMarkToday.setOnClickListener { view ->
-            // TODO: add logic to check if the current day is marked and call mark/unmark based on that
-            streak.markForToday()
+            if (LocalDate.now() !in streak.markedDays) {
+                streak.markForToday()
+            } else {
+                streak.unmarkForToday()
+            }
 
-            // TODO: if the current day is included in streaks, then we need to update these fields
             tvLongestStreakValue.text = streak.getLongestStreak().toString()
             tvCurrentStreakValue.text = streak.getCurrentStreak().toString()
 

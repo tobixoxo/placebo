@@ -1,13 +1,13 @@
 package com.tobaxiom.placebo
 
+import android.util.Log
 import java.time.LocalDate
+import java.util.NavigableSet
 import java.util.UUID
 
 class Streak(var name: String) {
     var id: UUID = UUID.randomUUID()
-
-    // TODO: what DS do we store these days in? a SortedSet maybe, we don't need duplicates and its good if its sorted
-    var markedDays = mutableListOf<LocalDate>()
+    var markedDays: NavigableSet<LocalDate> = sortedSetOf()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -23,11 +23,14 @@ class Streak(var name: String) {
     }
 
     fun markForToday() {
+        Log.i("abc", "before adding: $markedDays, ${LocalDate.now()}")
         markedDays.add(LocalDate.now())
+        Log.i("abc", "after adding: $markedDays ")
+
     }
 
     fun unmarkForToday() {
-        // TODO: remove from sortedset
+        markedDays.remove(LocalDate.now())
     }
 
     fun getLongestStreak(): Int {
@@ -35,32 +38,56 @@ class Streak(var name: String) {
         if (markedDays.size == 1) return 1
 
         var maxStreakLen = 0;
-        var streakLen = 1
-        var prevDay: LocalDate = markedDays[0]
-        for (day in markedDays.sortedDescending()) {
-            if (day.minusDays(1).equals(prevDay)) {
+        var streakLen = 0
+
+        val days = markedDays.iterator()
+
+        var firstDay = days.next()
+        while (days.hasNext()) {
+            val day = days.next()
+            if (firstDay.plusDays(1) == day) {
                 streakLen++
-                prevDay = day
-                if (streakLen > maxStreakLen) maxStreakLen = streakLen
+                if (streakLen > maxStreakLen) {
+                    maxStreakLen = streakLen
+                }
             } else {
-                streakLen = 1
+                streakLen = 0
             }
         }
-        return maxStreakLen;
+        return maxStreakLen
     }
 
     fun getCurrentStreak(): Int {
-        if (markedDays.isEmpty()) return 0
+        // no streaks present
+        if (markedDays.isEmpty()) {
+            return 0
+        }
 
-        var streakLen = 0
-        // TODO: figure out if the current day counted in the current streak?????
-        var lastDate = LocalDate.now().plusDays(1)
-        for (day in markedDays.sortedDescending()){
-            if (lastDate.minusDays(1).equals(day)) {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+
+        val days = markedDays.descendingIterator()
+
+        var latestDay = days.next()
+
+        // no existing streak is 'current', i.e. extends until today/yesterday
+        if (latestDay != today && latestDay != yesterday) {
+            Log.i("abc", "latestDay=$latestDay, today=$today, yesterday=$yesterday")
+            return 0
+        }
+
+        var streakLen = 1 // today/tomorrow is already accounted for
+
+        Log.i("abc", "streakLen=$streakLen")
+        // go backwards from the latest day until the streak ends
+        while (days.hasNext()) {
+            val day = days.next()
+            if (latestDay.minusDays(1) == day) {
                 streakLen++
-                lastDate = day
+                Log.i("abc", "streakLen is now=$streakLen")
+                latestDay = day
             } else {
-                break;
+                break
             }
         }
         return streakLen
