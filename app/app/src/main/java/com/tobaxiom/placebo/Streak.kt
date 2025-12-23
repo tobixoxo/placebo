@@ -9,6 +9,10 @@ class Streak(var name: String) {
     var id: UUID = UUID.randomUUID()
     var markedDays: NavigableSet<LocalDate> = sortedSetOf()
 
+    override fun toString(): String {
+        return "Streak{name=$name, id=$id, markedDays=$markedDays}"
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

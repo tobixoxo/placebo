@@ -4,12 +4,18 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.tobaxiom.placebo.R
 import com.tobaxiom.placebo.Streak
 
-class StreaksRVAdapter(val streaks: MutableList<Streak>, val streakOnClickListener: (Streak) -> Unit): RecyclerView.Adapter<StreaksRVAdapter.StreakRVItemViewHolder>() {
+class StreaksRVAdapter(
+    val streaks: MutableList<Streak>,
+    val streakOnClickListener: (Streak) -> Unit,
+    val streakEditListener: (Streak) -> Unit,
+    val streakRemoveListener: (Streak) -> Unit
+): RecyclerView.Adapter<StreaksRVAdapter.StreakRVItemViewHolder>() {
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
@@ -33,8 +39,13 @@ class StreaksRVAdapter(val streaks: MutableList<Streak>, val streakOnClickListen
 
     inner class StreakRVItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val streakName: TextView = itemView.findViewById(R.id.tvStreakName)
+        val editButton = itemView.findViewById<ImageView>(R.id.ivEdit)
+        val removeButton = itemView.findViewById<ImageView>(R.id.ivDelete)
+
         fun setOnClickListener(streak: Streak) {
             itemView.setOnClickListener { streakOnClickListener(streak) }
+            editButton.setOnClickListener { streakEditListener(streak) }
+            removeButton.setOnClickListener { streakRemoveListener(streak) }
         }
     }
 }

@@ -1,8 +1,10 @@
 package com.tobaxiom.placebo.streaksList
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -36,17 +38,10 @@ class StreaksListFragment: Fragment(R.layout.streaks_list_view) {
         }
 
         streaksRV.layoutManager = LinearLayoutManager(requireContext())
-        streaksRV.adapter = StreaksRVAdapter(streaks, this::navigateToStreakView)
+        streaksRV.adapter = StreaksRVAdapter(streaks, this::navigateToStreakView, this::editStreak, this::removeStreak)
 
         addButton.setOnClickListener { view ->
-            // TODO: this streak name should be an editable input
-            streaks.add(Streak("abcd"))
-            streaksRV.adapter?.notifyItemInserted(streaks.size - 1)
-
-            if (!streaksRV.isVisible) {
-                streaksRV.visibility = View.VISIBLE
-                tvNoStreaks.visibility = View.GONE
-            }
+            showAddStreakDialog()
         }
     }
 
@@ -58,5 +53,62 @@ class StreaksListFragment: Fragment(R.layout.streaks_list_view) {
 
         (requireActivity() as AppCompatActivity)
             .supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    fun removeStreak(streak: Streak) {
+        Log.i("StreakListFragment", "removing streak=$streak, i=${streaks.indexOf(streak)}, streaks=$streaks")
+        streaks.remove(streak)
+        Log.i("StreakListFragment", "streaks=$streaks")
+        streaksRV.adapter?.notifyItemRemoved(streaks.indexOf(streak))
+
+        if (!streaksRV.isVisible) {
+            streaksRV.visibility = View.VISIBLE
+            tvNoStreaks.visibility = View.GONE
+        }
+    }
+
+    fun editStreak(streak: Streak) {
+        val dialogView = layoutInflater.inflate(R.layout.new_streak_dialog, null)
+        val etStreakName = dialogView.findViewById<EditText>(R.id.etStreakName)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Edit streak")
+            .setView(dialogView)
+            .setPositiveButton("Set Name") {_, _ ->
+                val streakName = etStreakName.text.toString().trim()
+                if (streakName.isNotEmpty()) {
+                    streak.name = streakName
+                    streaksRV.adapter?.notifyItemChanged(streaks.indexOf(streak))
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    fun showAddStreakDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.new_streak_dialog, null)
+        val etStreakName = dialogView.findViewById<EditText>(R.id.etStreakName)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Add a new streak")
+            .setView(dialogView)
+            .setPositiveButton("Add") {_, _ ->
+                val streakName = etStreakName.text.toString().trim()
+                if (streakName.isNotEmpty()) {
+                    addNewStreak(streakName)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    fun addNewStreak(name: String) {
+        streaks.add(Streak(name))
+        streaksRV.adapter?.notifyItemInserted(streaks.size - 1)
+
+        if (!streaksRV.isVisible) {
+            streaksRV.visibility = View.VISIBLE
+            tvNoStreaks.visibility = View.GONE
+        }
     }
 }
