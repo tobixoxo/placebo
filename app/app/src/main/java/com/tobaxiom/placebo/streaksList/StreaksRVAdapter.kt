@@ -20,7 +20,7 @@ class StreaksRVAdapter(
         parent: ViewGroup,
         viewType: Int
     ): StreakRVItemViewHolder {
-        val view = LayoutInflater.from(parent.getContext()).inflate(R.layout.streak_rv_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.streak_rv_item, parent, false)
         return StreakRVItemViewHolder(view)
     }
 
@@ -39,8 +39,8 @@ class StreaksRVAdapter(
 
     inner class StreakRVItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val streakName: TextView = itemView.findViewById(R.id.tvStreakName)
-        val editButton = itemView.findViewById<ImageView>(R.id.ivEdit)
-        val removeButton = itemView.findViewById<ImageView>(R.id.ivDelete)
+        val editButton: ImageView = itemView.findViewById(R.id.ivEdit)
+        val removeButton: ImageView = itemView.findViewById(R.id.ivDelete)
 
         fun setOnClickListener(streak: Streak) {
             itemView.setOnClickListener { streakOnClickListener(streak) }

@@ -19,7 +19,6 @@ class Streak(var name: String) {
 
         other as Streak
 
-        Log.i("abc", "$this.equals($other)")
         return id == other.id
     }
 
@@ -28,9 +27,7 @@ class Streak(var name: String) {
     }
 
     fun markForToday() {
-        Log.i("abc", "before adding: $markedDays, ${LocalDate.now()}")
         markedDays.add(LocalDate.now())
-        Log.i("abc", "after adding: $markedDays ")
 
     }
 
@@ -77,19 +74,16 @@ class Streak(var name: String) {
 
         // no existing streak is 'current', i.e. extends until today/yesterday
         if (latestDay != today && latestDay != yesterday) {
-            Log.i("abc", "latestDay=$latestDay, today=$today, yesterday=$yesterday")
             return 0
         }
 
         var streakLen = 1 // today/tomorrow is already accounted for
 
-        Log.i("abc", "streakLen=$streakLen")
         // go backwards from the latest day until the streak ends
         while (days.hasNext()) {
             val day = days.next()
             if (latestDay.minusDays(1) == day) {
                 streakLen++
-                Log.i("abc", "streakLen is now=$streakLen")
                 latestDay = day
             } else {
                 break
