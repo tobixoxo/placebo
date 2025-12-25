@@ -1,11 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.tobaxiom.placebo"
     compileSdk = 36
+
+    buildFeatures {
+        compose = true
+    }
 
     defaultConfig {
         applicationId = "com.tobaxiom.placebo"
@@ -46,4 +51,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // compose
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.activity.compose)
 }
