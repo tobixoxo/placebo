@@ -38,7 +38,6 @@ import java.time.LocalDate
 
 @Composable
 fun StreakPage(streak: Streak) {
-    // TODO: there is some issue w the state here, it needs to be reactive
     val isMarked by remember(streak.markedDays) {
         derivedStateOf {
             LocalDate.now() in streak.markedDays

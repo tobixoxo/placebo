@@ -1,13 +1,13 @@
 package com.tobaxiom.placebo
 
-import android.util.Log
 import java.time.LocalDate
-import java.util.NavigableSet
 import java.util.UUID
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 
 class Streak(var name: String) {
     var id: UUID = UUID.randomUUID()
-    var markedDays: NavigableSet<LocalDate> = sortedSetOf()
+    var markedDays: SnapshotStateList<LocalDate> = mutableStateListOf()
 
     override fun toString(): String {
         return "Streak{name=$name, id=$id, markedDays=$markedDays}"
@@ -27,7 +27,10 @@ class Streak(var name: String) {
     }
 
     fun markForToday() {
-        markedDays.add(LocalDate.now())
+        if(LocalDate.now() !in markedDays) {
+            markedDays.add(LocalDate.now())
+            markedDays.sort();
+        }
 
     }
 
@@ -61,34 +64,27 @@ class Streak(var name: String) {
 
     fun getCurrentStreak(): Int {
         // no streaks present
-        if (markedDays.isEmpty()) {
-            return 0
+        if(markedDays.isEmpty()) return 0
+
+        val today = LocalDate.now();
+        val yesterday = today.minusDays(1);
+
+        val latestDay = markedDays.lastOrNull() ?: return 0
+
+        if(latestDay != today && latestDay != yesterday)
+            return 0;
+        var streakLen = 1;
+
+        for(i in (markedDays.size - 2) downTo 0){
+            val currentDay = markedDays[i + 1]
+            val previousDay = markedDays[i]
+            if(currentDay.minusDays(1) == previousDay)
+                streakLen++;
+            else
+                break;
         }
 
-        val today = LocalDate.now()
-        val yesterday = today.minusDays(1)
-
-        val days = markedDays.descendingIterator()
-
-        var latestDay = days.next()
-
-        // no existing streak is 'current', i.e. extends until today/yesterday
-        if (latestDay != today && latestDay != yesterday) {
-            return 0
-        }
-
-        var streakLen = 1 // today/tomorrow is already accounted for
-
-        // go backwards from the latest day until the streak ends
-        while (days.hasNext()) {
-            val day = days.next()
-            if (latestDay.minusDays(1) == day) {
-                streakLen++
-                latestDay = day
-            } else {
-                break
-            }
-        }
         return streakLen
+
     }
 }
