@@ -4,8 +4,9 @@ import java.time.LocalDate
 import java.util.UUID
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import java.io.Serializable
 
-class Streak(var name: String) {
+class Streak(var name: String) : Serializable {
     var id: UUID = UUID.randomUUID()
     var markedDays: SnapshotStateList<LocalDate> = mutableStateListOf()
 

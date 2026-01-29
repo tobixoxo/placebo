@@ -37,7 +37,11 @@ import com.tobaxiom.placebo.Streak
 import java.time.LocalDate
 
 @Composable
-fun StreakPage(streak: Streak) {
+fun StreakPage(
+    streak: Streak,
+    onMarkToday: () -> Unit,
+    onUnmarkToday: () -> Unit
+) {
     val isMarked by remember(streak.markedDays) {
         derivedStateOf {
             LocalDate.now() in streak.markedDays
@@ -99,10 +103,8 @@ fun StreakPage(streak: Streak) {
         // ToggleButton Equivalent (Material 3 Button)
         Button(
             onClick = {
-                Log.i("abc", "pre click $streak")
-                if (!isMarked) streak.markForToday()
-                else streak.unmarkForToday()
-                Log.i("post", "pre click $streak")
+                if (!isMarked) onMarkToday()
+                else onUnmarkToday()
             },
             modifier = Modifier.padding(bottom = 48.dp)
         ) {
@@ -110,20 +112,6 @@ fun StreakPage(streak: Streak) {
                 text = if (isMarked) "Marked" else "Mark for Today",
                 fontSize = 20.sp
             )
-        }
-    }
-}
-
-class StreakViewFragment(val streak: Streak): Fragment(R.layout.streak_view) {
-    override fun onCreateView(inflate: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-
-            setContent {
-                PlaceboTheme {
-                    StreakPage(streak)
-                }
-            }
         }
     }
 }
