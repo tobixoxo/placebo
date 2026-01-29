@@ -41,23 +41,23 @@ class Streak(var name: String) : Serializable {
 
     fun getLongestStreak(): Int {
         if (markedDays.isEmpty()) return 0
-        if (markedDays.size == 1) return 1
 
-        var maxStreakLen = 0;
-        var streakLen = 0
+        var maxStreakLen = 1
+        var currentStreakLen = 1
 
-        val days = markedDays.iterator()
-
-        var firstDay = days.next()
-        while (days.hasNext()) {
-            val day = days.next()
-            if (firstDay.plusDays(1) == day) {
-                streakLen++
-                if (streakLen > maxStreakLen) {
-                    maxStreakLen = streakLen
-                }
+        // The list is sorted upon insertion, so we can iterate through it.
+        for (i in 1 until markedDays.size) {
+            val previousDay = markedDays[i - 1]
+            val currentDay = markedDays[i]
+            if (currentDay.minusDays(1) == previousDay) {
+                currentStreakLen++
             } else {
-                streakLen = 0
+                // Streak is broken, reset the counter
+                currentStreakLen = 1
+            }
+            
+            if (currentStreakLen > maxStreakLen) {
+                maxStreakLen = currentStreakLen
             }
         }
         return maxStreakLen
