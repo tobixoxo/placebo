@@ -1,9 +1,9 @@
 package com.tobaxiom.placebo.streaksList
 
+import android.graphics.fonts.FontStyle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,11 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tobaxiom.placebo.PlaceboTheme
-import com.tobaxiom.placebo.Streak
+import com.tobaxiom.placebo.data.Streak
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +56,18 @@ fun StreaksListScreen(
     var streakToEdit by remember { mutableStateOf<Streak?>(null) }
 
     Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Placebo",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 streakToEdit = null // Ensure we are in "add" mode
@@ -200,17 +214,22 @@ fun StreaksListScreenPreview_WithData() {
     // Use a 'remember' block to create a stable list for the preview
     val previewStreaks = remember {
         mutableStateListOf(
-            Streak("Workout Daily"),
-            Streak("Read for 15 minutes"),
-            Streak("Drink 8 glasses of water")
+            Streak(id = 1, name = "Workout Daily", startDate = System.currentTimeMillis()),
+            Streak(id = 2, name = "Read for 15 minutes", startDate = System.currentTimeMillis()),
+            Streak(id = 3, name = "Drink 8 glasses of water", startDate = System.currentTimeMillis())
         )
     }
     PlaceboTheme {
         StreaksListScreen(
             streaks = previewStreaks,
             onStreakClicked = {},
-            onAddStreak = { name -> previewStreaks.add(Streak(name)) },
-            onEditStreak = { streak, newName -> streak.name = newName },
+            onAddStreak = { name -> previewStreaks.add(Streak(name = name, startDate = System.currentTimeMillis())) },
+            onEditStreak = { streak, newName ->
+                val index = previewStreaks.indexOf(streak)
+                if (index != -1) {
+                    previewStreaks[index] = streak.copy(name = newName)
+                }
+            },
             onRemoveStreak = { streak -> previewStreaks.remove(streak) }
         )
     }

@@ -1,82 +1,64 @@
 package com.tobaxiom.placebo
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.tobaxiom.placebo.data.Completion
+import com.tobaxiom.placebo.data.Streak
+import com.tobaxiom.placebo.data.StreaksRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDate
-import kotlin.random.Random
+import java.time.ZoneOffset
 
-class StreaksViewModel : ViewModel() {
-    val streaks = mutableStateListOf<Streak>()
+class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() {
 
-    init {
-        if (streaks.isEmpty()) {
-            seedInitialData()
-        }
+    val streaks: StateFlow<List<Streak>> = repository.allStreaks
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun getCompletionsForStreak(streakId: Int): Flow<List<Completion>> {
+        return repository.getCompletionsForStreak(streakId)
     }
 
-    private fun seedInitialData() {
-        val today = LocalDate.now()
-
-        val streak1 = Streak("Daily Workout").apply {
-//            for (i in 0..30) {
-//                if (Random.nextBoolean()) {
-//                    markedDays.add(today.minusDays(i.toLong()))
-//                }
-//            }
-            // Ensure some streaks for demo
-            markedDays.add(today.minusDays(1))
-            markedDays.add(today.minusDays(2))
-            markedDays.add(today.minusDays(4))
-            markedDays.add(today.minusDays(5))
-            markedDays.add(today.minusDays(6))
-            markedDays.sort()
-        }
-
-        val streak2 = Streak("Read for 15 mins").apply {
-            for (i in 0..15) {
-                if (Random.nextBoolean()) {
-                    markedDays.add(today.minusDays(i.toLong()))
-                }
-            }
-            markedDays.sort()
-        }
-
-        val streak3 = Streak("Drink 8 glasses of water").apply {
-            markedDays.add(today)
-            markedDays.add(today.minusDays(1))
-            markedDays.sort()
-        }
-
-        streaks.addAll(listOf(streak1, streak2, streak3))
-    }
-
-    fun getStreak(id: String): Streak? {
-        return streaks.find { it.id.toString() == id }
+    fun getStreak(id: Int): Streak? {
+        return streaks.value.find { it.id == id }
     }
 
     fun addStreak(name: String) {
-        streaks.add(Streak(name))
+        viewModelScope.launch {
+            repository.insert(Streak(name = name, startDate = 0))
+        }
     }
 
     fun editStreak(streak: Streak, newName: String) {
-        streak.name = newName
-        val index = streaks.indexOf(streak)
-        if (index != -1) {
-            streaks[index] = streak
+        viewModelScope.launch {
+            repository.update(streak.copy(name = newName))
         }
     }
 
     fun removeStreak(streak: Streak) {
-        streaks.remove(streak)
-    }
-
-    fun markToday(streak: Streak) {
-        if (LocalDate.now() !in streak.markedDays) {
-            streak.markForToday()
+        viewModelScope.launch {
+            repository.delete(streak)
         }
     }
 
-    fun unmarkToday(streak: Streak) {
-        streak.unmarkForToday()
+    fun markToday(streakId: Int) {
+        viewModelScope.launch {
+            val today = LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+            repository.insert(Completion(streakId = streakId, date = today))
+        }
+    }
+
+    fun unmarkToday(streakId: Int) {
+        viewModelScope.launch {
+            val today = LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+            repository.delete(Completion(streakId = streakId, date = today))
+        }
     }
 }
