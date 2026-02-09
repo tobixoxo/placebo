@@ -61,7 +61,7 @@ fun StreaksListScreen(
                 title = {
                     Text(
                         "Placebo",
-                        fontSize = 24.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -88,7 +88,7 @@ fun StreaksListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+//                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = paddingValues
                 ) {
                     items(streaks, key = { it.id }) { streak ->
@@ -133,7 +133,7 @@ fun StreakItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable(onClick = onItemClick)
     ) {
         Row(

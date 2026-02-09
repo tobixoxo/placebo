@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,14 +42,24 @@ class MainActivity : ComponentActivity() {
                     composable("streakview/{streakId}") { backStackEntry ->
                         val streakId = backStackEntry.arguments?.getString("streakId")?.toIntOrNull()
                         if (streakId != null) {
+                            LaunchedEffect(streakId) {
+                                streaksViewModel.loadCompletionsForStreak(streakId)
+                            }
+
                             val streak = streaksViewModel.getStreak(streakId)
+                            val currentStreak by streaksViewModel.currentStreakCount.collectAsState()
+                            val longestStreak by streaksViewModel.longestStreakCount.collectAsState()
+                            val completions = streaksViewModel.getCompletionsForStreak(streakId).collectAsState(initial = emptyList())
+
                             if (streak != null) {
-                                val completions = streaksViewModel.getCompletionsForStreak(streakId).collectAsState(initial = emptyList())
                                 StreakPage(
                                     streak = streak,
                                     completions = completions.value,
+                                    currentStreak = currentStreak,
+                                    longestStreak = longestStreak,
                                     onMarkToday = { streaksViewModel.markToday(streakId) },
-                                    onUnmarkToday = { streaksViewModel.unmarkToday(streakId) }
+                                    onUnmarkToday = { streaksViewModel.unmarkToday(streakId) },
+                                    onBackClicked = { navController.popBackStack() }
                                 )
                             } else {
                                 // Handle error: streak not found

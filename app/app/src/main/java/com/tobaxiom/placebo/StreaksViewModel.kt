@@ -5,9 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.tobaxiom.placebo.data.Completion
 import com.tobaxiom.placebo.data.Streak
 import com.tobaxiom.placebo.data.StreaksRepository
+import com.tobaxiom.placebo.util.calculateStreakCounts
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -21,6 +25,22 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    private val _currentStreakCount = MutableStateFlow(0)
+    val currentStreakCount: StateFlow<Int> = _currentStreakCount
+
+    private val _longestStreakCount = MutableStateFlow(0)
+    val longestStreakCount: StateFlow<Int> = _longestStreakCount
+
+    fun loadCompletionsForStreak(streakId: Int) {
+        repository.getCompletionsForStreak(streakId)
+            .onEach { completions ->
+                val (current, longest) = calculateStreakCounts(completions)
+                _currentStreakCount.value = current
+                _longestStreakCount.value = longest
+            }
+            .launchIn(viewModelScope)
+    }
 
     fun getCompletionsForStreak(streakId: Int): Flow<List<Completion>> {
         return repository.getCompletionsForStreak(streakId)
