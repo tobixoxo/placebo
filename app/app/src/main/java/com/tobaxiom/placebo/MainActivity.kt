@@ -34,8 +34,8 @@ class MainActivity : ComponentActivity() {
                             onStreakClicked = { streak ->
                                 navController.navigate("streakview/${streak.id}")
                             },
-                            onAddStreak = { name -> streaksViewModel.addStreak(name) },
-                            onEditStreak = { streak, newName -> streaksViewModel.editStreak(streak, newName) },
+                            onAddStreak = { name, iconName -> streaksViewModel.addStreak(name, iconName) },
+                            onEditStreak = { streak, newName, newIconName -> streaksViewModel.editStreak(streak, newName, newIconName) },
                             onRemoveStreak = { streak -> streaksViewModel.removeStreak(streak) }
                         )
                     }

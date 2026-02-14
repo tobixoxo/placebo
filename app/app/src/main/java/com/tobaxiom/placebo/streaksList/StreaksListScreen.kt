@@ -1,13 +1,14 @@
 package com.tobaxiom.placebo.streaksList
 
-import android.graphics.fonts.FontStyle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -28,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,19 +40,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tobaxiom.placebo.PlaceboTheme
 import com.tobaxiom.placebo.data.Streak
+import com.tobaxiom.placebo.util.getIconVector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StreaksListScreen(
     streaks: List<Streak>,
     onStreakClicked: (Streak) -> Unit,
-    onAddStreak: (String) -> Unit,
-    onEditStreak: (Streak, String) -> Unit,
+    onAddStreak: (String, String) -> Unit, // Updated lambda
+    onEditStreak: (Streak, String, String) -> Unit, // Updated lambda
     onRemoveStreak: (Streak) -> Unit,
 ) {
-    // State to control the visibility of the "Add/Edit" dialog
     var showDialog by remember { mutableStateOf(false) }
-    // State to hold the streak being edited, if any.
     var streakToEdit by remember { mutableStateOf<Streak?>(null) }
 
     Scaffold(
@@ -60,7 +59,7 @@ fun StreaksListScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Placebo",
+                        text = "Placebo",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -70,7 +69,7 @@ fun StreaksListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                streakToEdit = null // Ensure we are in "add" mode
+                streakToEdit = null
                 showDialog = true
             }) {
                 Icon(Icons.Default.Add, contentDescription = "Add a new streak")
@@ -88,7 +87,7 @@ fun StreaksListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-//                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = paddingValues
                 ) {
                     items(streaks, key = { it.id }) { streak ->
@@ -111,11 +110,11 @@ fun StreaksListScreen(
         AddEditStreakDialog(
             streakToEdit = streakToEdit,
             onDismiss = { showDialog = false },
-            onConfirm = { name ->
+            onConfirm = { name, iconName -> // Updated lambda
                 if (streakToEdit == null) {
-                    onAddStreak(name)
+                    onAddStreak(name, iconName)
                 } else {
-                    onEditStreak(streakToEdit!!, name)
+                    onEditStreak(streakToEdit!!, name, iconName)
                 }
                 showDialog = false
             }
@@ -133,7 +132,7 @@ fun StreakItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .padding(horizontal = 16.dp)
             .clickable(onClick = onItemClick)
     ) {
         Row(
@@ -142,6 +141,8 @@ fun StreakItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(imageVector = getIconVector(streak.iconName), contentDescription = null)
+            Spacer(modifier = Modifier.width(16.dp))
             Text(text = streak.name, modifier = Modifier.weight(1f), fontSize = 18.sp)
             IconButton(onClick = onEditClick) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit Streak")
@@ -157,27 +158,35 @@ fun StreakItem(
 fun AddEditStreakDialog(
     streakToEdit: Streak?,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String, String) -> Unit // Updated lambda
 ) {
     var text by remember { mutableStateOf(streakToEdit?.name ?: "") }
+    var selectedIconName by remember { mutableStateOf(streakToEdit?.iconName ?: "Star") }
+    var showIconPicker by remember { mutableStateOf(false) }
     val isEditing = streakToEdit != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (isEditing) "Edit streak" else "Add a new streak") },
         text = {
-            TextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Streak Name") },
-                singleLine = true
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { showIconPicker = true }) {
+                    Icon(getIconVector(selectedIconName), contentDescription = "Select Icon")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Streak Name") },
+                    singleLine = true
+                )
+            }
         },
         confirmButton = {
             Button(
                 onClick = {
                     if (text.isNotBlank()) {
-                        onConfirm(text.trim())
+                        onConfirm(text.trim(), selectedIconName)
                     }
                 },
                 enabled = text.isNotBlank()
@@ -191,6 +200,16 @@ fun AddEditStreakDialog(
             }
         }
     )
+
+    if (showIconPicker) {
+        IconPickerDialog(
+            onIconSelected = { iconName ->
+                selectedIconName = iconName
+                showIconPicker = false
+            },
+            onDismiss = { showIconPicker = false }
+        )
+    }
 }
 
 
@@ -201,8 +220,8 @@ fun StreaksListScreenPreview_Empty() {
         StreaksListScreen(
             streaks = emptyList(),
             onStreakClicked = {},
-            onAddStreak = {},
-            onEditStreak = { _, _ -> },
+            onAddStreak = { _, _ -> },
+            onEditStreak = { _, _, _ -> },
             onRemoveStreak = {}
         )
     }
@@ -211,26 +230,22 @@ fun StreaksListScreenPreview_Empty() {
 @Preview(showBackground = true)
 @Composable
 fun StreaksListScreenPreview_WithData() {
-    // Use a 'remember' block to create a stable list for the preview
     val previewStreaks = remember {
-        mutableStateListOf(
-            Streak(id = 1, name = "Workout Daily", startDate = System.currentTimeMillis()),
-            Streak(id = 2, name = "Read for 15 minutes", startDate = System.currentTimeMillis()),
-            Streak(id = 3, name = "Drink 8 glasses of water", startDate = System.currentTimeMillis())
+        mutableStateOf(
+            listOf(
+                Streak(id = 1, name = "Workout Daily", startDate = System.currentTimeMillis(), iconName = "Fitness"),
+                Streak(id = 2, name = "Read for 15 minutes", startDate = System.currentTimeMillis(), iconName = "Book"),
+                Streak(id = 3, name = "Drink 8 glasses of water", startDate = System.currentTimeMillis(), iconName = "Star")
+            )
         )
     }
     PlaceboTheme {
         StreaksListScreen(
-            streaks = previewStreaks,
+            streaks = previewStreaks.value,
             onStreakClicked = {},
-            onAddStreak = { name -> previewStreaks.add(Streak(name = name, startDate = System.currentTimeMillis())) },
-            onEditStreak = { streak, newName ->
-                val index = previewStreaks.indexOf(streak)
-                if (index != -1) {
-                    previewStreaks[index] = streak.copy(name = newName)
-                }
-            },
-            onRemoveStreak = { streak -> previewStreaks.remove(streak) }
+            onAddStreak = { _, _ -> },
+            onEditStreak = { _, _, _ -> },
+            onRemoveStreak = { streak -> previewStreaks.value = previewStreaks.value.filterNot { it.id == streak.id } }
         )
     }
 }

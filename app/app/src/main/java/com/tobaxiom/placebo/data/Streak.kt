@@ -9,5 +9,6 @@ data class Streak(
     val id: Int = 0,
     val name: String,
     val startDate: Long,
-    val lastResetDate: Long? = null
+    val lastResetDate: Long? = null,
+    val iconName: String = "Star"
 )

@@ -50,15 +50,15 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
         return streaks.value.find { it.id == id }
     }
 
-    fun addStreak(name: String) {
+    fun addStreak(name: String, iconName: String) {
         viewModelScope.launch {
-            repository.insert(Streak(name = name, startDate = 0))
+            repository.insert(Streak(name = name, iconName = iconName, startDate = 0))
         }
     }
 
-    fun editStreak(streak: Streak, newName: String) {
+    fun editStreak(streak: Streak, newName: String, newIconName: String) {
         viewModelScope.launch {
-            repository.update(streak.copy(name = newName))
+            repository.update(streak.copy(name = newName, iconName = newIconName))
         }
     }
 
