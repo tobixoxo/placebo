@@ -10,5 +10,6 @@ data class Streak(
     val name: String,
     val startDate: Long,
     val lastResetDate: Long? = null,
-    val iconName: String = "Star"
+    val iconName: String = "Star",
+    val isArchived: Boolean = false
 )

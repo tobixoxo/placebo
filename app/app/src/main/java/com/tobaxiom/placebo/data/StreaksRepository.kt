@@ -4,7 +4,8 @@ import kotlinx.coroutines.flow.Flow
 
 class StreaksRepository(private val streakDao: StreakDao, private val completionDao: CompletionDao) {
 
-    val allStreaks: Flow<List<Streak>> = streakDao.getAllStreaks()
+    val activeStreaks: Flow<List<Streak>> = streakDao.getActiveStreaks()
+    val archivedStreaks: Flow<List<Streak>> = streakDao.getArchivedStreaks()
 
     fun getCompletionsForStreak(streakId: Int): Flow<List<Completion>> {
         return completionDao.getCompletionsForStreak(streakId)
@@ -28,5 +29,13 @@ class StreaksRepository(private val streakDao: StreakDao, private val completion
 
     suspend fun delete(completion: Completion) {
         completionDao.delete(completion.streakId, completion.date)
+    }
+
+    suspend fun archiveStreak(streak: Streak) {
+        streakDao.update(streak.copy(isArchived = true))
+    }
+
+    suspend fun unarchiveStreak(streak: Streak) {
+        streakDao.update(streak.copy(isArchived = false))
     }
 }

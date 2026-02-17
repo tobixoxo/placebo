@@ -18,6 +18,9 @@ interface StreakDao {
     @Delete
     suspend fun delete(streak: Streak)
 
-    @Query("SELECT * FROM streaks ORDER BY startDate DESC")
-    fun getAllStreaks(): Flow<List<Streak>>
+    @Query("SELECT * FROM streaks WHERE isArchived = 0 ORDER BY startDate DESC")
+    fun getActiveStreaks(): Flow<List<Streak>>
+
+    @Query("SELECT * FROM streaks WHERE isArchived = 1 ORDER BY startDate DESC")
+    fun getArchivedStreaks(): Flow<List<Streak>>
 }

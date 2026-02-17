@@ -13,8 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tobaxiom.placebo.PlaceboTheme
 import com.tobaxiom.placebo.data.Streak
+import com.tobaxiom.placebo.util.availableIcons
 import com.tobaxiom.placebo.util.getIconVector
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,9 +50,11 @@ import com.tobaxiom.placebo.util.getIconVector
 fun StreaksListScreen(
     streaks: List<Streak>,
     onStreakClicked: (Streak) -> Unit,
-    onAddStreak: (String, String) -> Unit, // Updated lambda
-    onEditStreak: (Streak, String, String) -> Unit, // Updated lambda
+    onAddStreak: (String, String) -> Unit,
+    onEditStreak: (Streak, String, String) -> Unit,
+    onArchiveStreak: (Streak) -> Unit,
     onRemoveStreak: (Streak) -> Unit,
+    onNavigateToArchive: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var streakToEdit by remember { mutableStateOf<Streak?>(null) }
@@ -60,10 +65,15 @@ fun StreaksListScreen(
                 title = {
                     Text(
                         text = "Placebo",
-                        fontSize = 30.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToArchive) {
+                        Icon(Icons.Default.Inventory2, contentDescription = "Archived Streaks")
+                    }
                 }
             )
         },
@@ -83,7 +93,7 @@ fun StreaksListScreen(
             contentAlignment = Alignment.Center
         ) {
             if (streaks.isEmpty()) {
-                Text("No streaks yet. Press '+' to add one!")
+                Text("No active streaks. Press '+' to add one!")
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -98,6 +108,7 @@ fun StreaksListScreen(
                                 streakToEdit = streak
                                 showDialog = true
                             },
+                            onArchiveClick = { onArchiveStreak(streak) },
                             onRemoveClick = { onRemoveStreak(streak) }
                         )
                     }
@@ -110,7 +121,7 @@ fun StreaksListScreen(
         AddEditStreakDialog(
             streakToEdit = streakToEdit,
             onDismiss = { showDialog = false },
-            onConfirm = { name, iconName -> // Updated lambda
+            onConfirm = { name, iconName ->
                 if (streakToEdit == null) {
                     onAddStreak(name, iconName)
                 } else {
@@ -127,6 +138,7 @@ fun StreakItem(
     streak: Streak,
     onItemClick: () -> Unit,
     onEditClick: () -> Unit,
+    onArchiveClick: () -> Unit,
     onRemoveClick: () -> Unit
 ) {
     Card(
@@ -147,8 +159,8 @@ fun StreakItem(
             IconButton(onClick = onEditClick) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit Streak")
             }
-            IconButton(onClick = onRemoveClick) {
-                Icon(Icons.Default.Delete, contentDescription = "Remove Streak")
+            IconButton(onClick = onArchiveClick) {
+                Icon(Icons.Default.Archive, contentDescription = "Archive Streak")
             }
         }
     }
@@ -158,7 +170,7 @@ fun StreakItem(
 fun AddEditStreakDialog(
     streakToEdit: Streak?,
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit // Updated lambda
+    onConfirm: (String, String) -> Unit
 ) {
     var text by remember { mutableStateOf(streakToEdit?.name ?: "") }
     var selectedIconName by remember { mutableStateOf(streakToEdit?.iconName ?: "Star") }
@@ -222,7 +234,9 @@ fun StreaksListScreenPreview_Empty() {
             onStreakClicked = {},
             onAddStreak = { _, _ -> },
             onEditStreak = { _, _, _ -> },
-            onRemoveStreak = {}
+            onArchiveStreak = {},
+            onRemoveStreak = {},
+            onNavigateToArchive = {}
         )
     }
 }
@@ -231,13 +245,15 @@ fun StreaksListScreenPreview_Empty() {
 @Composable
 fun StreaksListScreenPreview_WithData() {
     val previewStreaks = remember {
-        mutableStateOf(
-            listOf(
-                Streak(id = 1, name = "Workout Daily", startDate = System.currentTimeMillis(), iconName = "Fitness"),
-                Streak(id = 2, name = "Read for 15 minutes", startDate = System.currentTimeMillis(), iconName = "Book"),
-                Streak(id = 3, name = "Drink 8 glasses of water", startDate = System.currentTimeMillis(), iconName = "Star")
+        val streaks = availableIcons.mapIndexed { index, streakIcon ->
+            Streak(
+                id = index,
+                name = "Example for ${streakIcon.name}",
+                startDate = System.currentTimeMillis(),
+                iconName = streakIcon.name
             )
-        )
+        }
+        mutableStateOf(streaks)
     }
     PlaceboTheme {
         StreaksListScreen(
@@ -245,7 +261,9 @@ fun StreaksListScreenPreview_WithData() {
             onStreakClicked = {},
             onAddStreak = { _, _ -> },
             onEditStreak = { _, _, _ -> },
-            onRemoveStreak = { streak -> previewStreaks.value = previewStreaks.value.filterNot { it.id == streak.id } }
+            onArchiveStreak = {},
+            onRemoveStreak = { streak -> previewStreaks.value = previewStreaks.value.filterNot { it.id == streak.id } },
+            onNavigateToArchive = {}
         )
     }
 }

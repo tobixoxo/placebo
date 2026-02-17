@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -19,35 +21,56 @@ import java.time.ZoneOffset
 
 class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() {
 
-    val streaks: StateFlow<List<Streak>> = repository.allStreaks
+    val activeStreaks: StateFlow<List<Streak>> = repository.activeStreaks
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    private val _currentStreakCount = MutableStateFlow(0)
-    val currentStreakCount: StateFlow<Int> = _currentStreakCount
+    val archivedStreaks: StateFlow<List<Streak>> = repository.archivedStreaks
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    private val _longestStreakCount = MutableStateFlow(0)
-    val longestStreakCount: StateFlow<Int> = _longestStreakCount
+    // The trigger for the detail screen data flow
+    private val _viewedStreakId = MutableStateFlow<Int?>(null)
 
-    fun loadCompletionsForStreak(streakId: Int) {
-        repository.getCompletionsForStreak(streakId)
-            .onEach { completions ->
-                val (current, longest) = calculateStreakCounts(completions)
-                _currentStreakCount.value = current
-                _longestStreakCount.value = longest
-            }
-            .launchIn(viewModelScope)
+    // The single, authoritative stream of completion data
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val viewedStreakCompletions: Flow<List<Completion>> = _viewedStreakId.flatMapLatest { streakId ->
+        streakId?.let { repository.getCompletionsForStreak(it) } ?: flowOf(emptyList())
     }
 
-    fun getCompletionsForStreak(streakId: Int): Flow<List<Completion>> {
-        return repository.getCompletionsForStreak(streakId)
+    // The completions for the currently viewed streak
+    val completions: StateFlow<List<Completion>> = viewedStreakCompletions
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    // The calculated streak counts for the currently viewed streak
+    val streakCounts: StateFlow<Pair<Int, Int>> = viewedStreakCompletions
+        .map { calculateStreakCounts(it) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = Pair(0, 0)
+        )
+
+    /**
+     * Sets the currently viewed streak, triggering the data flow for the detail screen.
+     * Call with null to stop the flow.
+     */
+    fun setViewedStreak(streakId: Int?) {
+        _viewedStreakId.value = streakId
     }
 
     fun getStreak(id: Int): Streak? {
-        return streaks.value.find { it.id == id }
+        return activeStreaks.value.find { it.id == id } ?: archivedStreaks.value.find { it.id == id }
     }
 
     fun addStreak(name: String, iconName: String) {
@@ -62,7 +85,19 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
         }
     }
 
-    fun removeStreak(streak: Streak) {
+    fun onArchiveStreak(streak: Streak) {
+        viewModelScope.launch {
+            repository.archiveStreak(streak)
+        }
+    }
+
+    fun onUnarchiveStreak(streak: Streak) {
+        viewModelScope.launch {
+            repository.unarchiveStreak(streak)
+        }
+    }
+
+    fun onDeletePermanently(streak: Streak) {
         viewModelScope.launch {
             repository.delete(streak)
         }

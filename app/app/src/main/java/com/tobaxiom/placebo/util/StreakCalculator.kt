@@ -23,20 +23,22 @@ fun calculateStreakCounts(completions: List<Completion>): Pair<Int, Int> {
     var longestStreak = 0
     var currentStreak = 0
 
+    // Only start counting if there are dates to process
     if (dates.isNotEmpty()) {
         longestStreak = 1
         currentStreak = 1
-    }
-
-    for (i in 1 until dates.size) {
-        // Check if the current date is exactly one day after the previous one
-        if (dates[i].isEqual(dates[i - 1].plusDays(1))) {
-            currentStreak++
-        } else {
-            // The streak is broken
-            currentStreak = 1
+        for (i in 1 until dates.size) {
+            // Check if the current date is a continuation of the streak
+            if (dates[i].isEqual(dates[i - 1].plusDays(1))) {
+                currentStreak++
+            } else {
+                // The streak is broken, reset to 1
+                currentStreak = 1
+            }
+            longestStreak = max(longestStreak, currentStreak)
         }
-        longestStreak = max(longestStreak, currentStreak)
+    } else {
+        return Pair(0, 0)
     }
 
     val today = LocalDate.now()
