@@ -9,10 +9,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,14 +39,10 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val context = LocalContext.current
 
-                // Permission launcher for notifications (Android 13+)
                 val permissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
-                ) { isGranted ->
-                    // Handle permission result if needed
-                }
+                ) { isGranted -> }
 
-                // Check and request permission if on Android 13+
                 LaunchedEffect(Unit) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         if (ContextCompat.checkSelfPermission(
@@ -92,37 +91,37 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("streakview/{streakId}") { backStackEntry ->
                         val streakId = backStackEntry.arguments?.getString("streakId")?.toIntOrNull()
-                        if (streakId != null) {
-                            // Use DisposableEffect to set/clear the viewed streak ID
-                            DisposableEffect(streakId) {
-                                streaksViewModel.setViewedStreak(streakId)
-                                onDispose {
-                                    streaksViewModel.setViewedStreak(null)
+                        
+                        // We wrap the destination in a fillMaxSize Box to ensure the transition
+                        // always has a stable, full-screen anchor even while loading data.
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            if (streakId != null) {
+                                DisposableEffect(streakId) {
+                                    streaksViewModel.setViewedStreak(streakId)
+                                    onDispose {
+                                        streaksViewModel.setViewedStreak(null)
+                                    }
+                                }
+
+                                val streak by streaksViewModel.viewedStreak.collectAsStateWithLifecycle()
+                                val completions by streaksViewModel.completions.collectAsState()
+                                val streakCounts by streaksViewModel.streakCounts.collectAsState()
+
+                                if (streak != null) {
+                                    StreakPage(
+                                        streak = streak!!,
+                                        completions = completions,
+                                        currentStreak = streakCounts.first,
+                                        longestStreak = streakCounts.second,
+                                        onMarkToday = { streaksViewModel.markToday(streakId) },
+                                        onUnmarkToday = { streaksViewModel.unmarkToday(streakId) },
+                                        onToggleReminder = { isEnabled, reminderTime ->
+                                            streaksViewModel.updateReminder(context, streakId, isEnabled, reminderTime)
+                                        },
+                                        onBackClicked = { navController.popBackStack() }
+                                    )
                                 }
                             }
-
-                            val streak by streaksViewModel.viewedStreak.collectAsStateWithLifecycle()
-                            val completions by streaksViewModel.completions.collectAsState()
-                            val streakCounts by streaksViewModel.streakCounts.collectAsState()
-
-                            if (streak != null) {
-                                StreakPage(
-                                    streak = streak!!,
-                                    completions = completions,
-                                    currentStreak = streakCounts.first,
-                                    longestStreak = streakCounts.second,
-                                    onMarkToday = { streaksViewModel.markToday(streakId) },
-                                    onUnmarkToday = { streaksViewModel.unmarkToday(streakId) },
-                                    onToggleReminder = { isEnabled, reminderTime ->
-                                        streaksViewModel.updateReminder(context, streakId, isEnabled, reminderTime)
-                                    },
-                                    onBackClicked = { navController.popBackStack() }
-                                )
-                            } else {
-                                // Handle error: streak not found
-                            }
-                        } else {
-                            // Handle error: invalid streakId
                         }
                     }
                 }

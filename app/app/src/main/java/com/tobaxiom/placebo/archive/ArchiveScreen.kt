@@ -32,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +49,7 @@ fun ArchiveScreen(
     onBackClicked: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf<Streak?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         topBar = {
@@ -84,7 +87,10 @@ fun ArchiveScreen(
                     items(archivedStreaks, key = { it.id }) { streak ->
                         ArchivedStreakItem(
                             streak = streak,
-                            onUnarchiveClick = { onUnarchiveStreak(streak) },
+                            onUnarchiveClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onUnarchiveStreak(streak)
+                            },
                             onDeleteClick = { showDeleteDialog = streak }
                         )
                     }
@@ -100,6 +106,7 @@ fun ArchiveScreen(
             text = { Text("Are you sure you want to permanently delete '${streak.name}'? This action cannot be undone.") },
             confirmButton = {
                 Button(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onDeletePermanently(streak)
                     showDeleteDialog = null
                 }) {
