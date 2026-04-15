@@ -11,6 +11,14 @@ class StreaksRepository(private val streakDao: StreakDao, private val completion
         return completionDao.getCompletionsForStreak(streakId)
     }
 
+    suspend fun getStreakById(id: Int): Streak? {
+        return streakDao.getStreakById(id)
+    }
+
+    fun getStreakByIdFlow(id: Int): Flow<Streak?> {
+        return streakDao.getStreakByIdFlow(id)
+    }
+
     suspend fun insert(streak: Streak) {
         streakDao.insert(streak)
     }
@@ -37,5 +45,12 @@ class StreaksRepository(private val streakDao: StreakDao, private val completion
 
     suspend fun unarchiveStreak(streak: Streak) {
         streakDao.update(streak.copy(isArchived = false))
+    }
+
+    suspend fun updateReminder(streakId: Int, isEnabled: Boolean, reminderTime: Long?) {
+        val streak = streakDao.getStreakById(streakId)
+        if (streak != null) {
+            streakDao.update(streak.copy(isReminderEnabled = isEnabled, reminderTime = reminderTime))
+        }
     }
 }

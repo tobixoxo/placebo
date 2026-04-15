@@ -23,4 +23,10 @@ interface StreakDao {
 
     @Query("SELECT * FROM streaks WHERE isArchived = 1 ORDER BY startDate DESC")
     fun getArchivedStreaks(): Flow<List<Streak>>
+
+    @Query("SELECT * FROM streaks WHERE id = :id")
+    suspend fun getStreakById(id: Int): Streak?
+
+    @Query("SELECT * FROM streaks WHERE id = :id")
+    fun getStreakByIdFlow(id: Int): Flow<Streak?>
 }

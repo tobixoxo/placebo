@@ -11,5 +11,7 @@ data class Streak(
     val startDate: Long,
     val lastResetDate: Long? = null,
     val iconName: String = "Star",
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val reminderTime: Long? = null,
+    val isReminderEnabled: Boolean = false
 )

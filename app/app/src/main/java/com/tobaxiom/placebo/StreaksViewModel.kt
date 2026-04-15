@@ -1,16 +1,17 @@
 package com.tobaxiom.placebo
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tobaxiom.placebo.data.Completion
 import com.tobaxiom.placebo.data.Streak
 import com.tobaxiom.placebo.data.StreaksRepository
+import com.tobaxiom.placebo.util.ReminderManager
 import com.tobaxiom.placebo.util.calculateStreakCounts
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -37,6 +38,18 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
 
     // The trigger for the detail screen data flow
     private val _viewedStreakId = MutableStateFlow<Int?>(null)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val viewedStreakFlow: Flow<Streak?> = _viewedStreakId.flatMapLatest { streakId ->
+        streakId?.let { repository.getStreakByIdFlow(it) } ?: flowOf(null)
+    }
+
+    val viewedStreak: StateFlow<Streak?> = viewedStreakFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     // The single, authoritative stream of completion data
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -75,13 +88,24 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
 
     fun addStreak(name: String, iconName: String) {
         viewModelScope.launch {
-            repository.insert(Streak(name = name, iconName = iconName, startDate = 0))
+            repository.insert(Streak(name = name, iconName = iconName, startDate = System.currentTimeMillis()))
         }
     }
 
     fun editStreak(streak: Streak, newName: String, newIconName: String) {
         viewModelScope.launch {
             repository.update(streak.copy(name = newName, iconName = newIconName))
+        }
+    }
+
+    fun updateReminder(context: Context, streakId: Int, isEnabled: Boolean, reminderTime: Long?) {
+        viewModelScope.launch {
+            repository.updateReminder(streakId, isEnabled, reminderTime)
+            if (isEnabled && reminderTime != null) {
+                ReminderManager.scheduleReminder(context, streakId, reminderTime)
+            } else {
+                ReminderManager.cancelReminder(context, streakId)
+            }
         }
     }
 
