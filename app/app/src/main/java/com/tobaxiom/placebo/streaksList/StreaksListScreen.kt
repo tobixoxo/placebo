@@ -1,22 +1,29 @@
 package com.tobaxiom.placebo.streaksList
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -36,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,11 +57,13 @@ import com.tobaxiom.placebo.util.getIconVector
 @Composable
 fun StreaksListScreen(
     streaks: List<Streak>,
+    completedTodayIds: Set<Int>,
     onStreakClicked: (Streak) -> Unit,
     onAddStreak: (String, String) -> Unit,
     onEditStreak: (Streak, String, String) -> Unit,
     onArchiveStreak: (Streak) -> Unit,
     onRemoveStreak: (Streak) -> Unit,
+    onToggleMarkToday: (Streak) -> Unit,
     onNavigateToArchive: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -103,13 +113,15 @@ fun StreaksListScreen(
                     items(streaks, key = { it.id }) { streak ->
                         StreakItem(
                             streak = streak,
+                            isCompletedToday = streak.id in completedTodayIds,
                             onItemClick = { onStreakClicked(streak) },
                             onEditClick = {
                                 streakToEdit = streak
                                 showDialog = true
                             },
                             onArchiveClick = { onArchiveStreak(streak) },
-                            onRemoveClick = { onRemoveStreak(streak) }
+                            onRemoveClick = { onRemoveStreak(streak) },
+                            onToggleMarkClick = { onToggleMarkToday(streak) }
                         )
                     }
                 }
@@ -136,10 +148,12 @@ fun StreaksListScreen(
 @Composable
 fun StreakItem(
     streak: Streak,
+    isCompletedToday: Boolean,
     onItemClick: () -> Unit,
     onEditClick: () -> Unit,
     onArchiveClick: () -> Unit,
-    onRemoveClick: () -> Unit
+    onRemoveClick: () -> Unit,
+    onToggleMarkClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -153,14 +167,52 @@ fun StreakItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(imageVector = getIconVector(streak.iconName), contentDescription = null)
+            Icon(
+                imageVector = getIconVector(streak.iconName),
+                contentDescription = null,
+                tint = if (isCompletedToday) MaterialTheme.colorScheme.primary else Color.Gray
+            )
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text = streak.name, modifier = Modifier.weight(1f), fontSize = 18.sp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = streak.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            }
+            
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.LightGray,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
             IconButton(onClick = onEditClick) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit Streak")
+                Icon(Icons.Default.Edit, contentDescription = "Edit Streak", tint = Color.Gray)
             }
             IconButton(onClick = onArchiveClick) {
-                Icon(Icons.Default.Archive, contentDescription = "Archive Streak")
+                Icon(Icons.Default.Archive, contentDescription = "Archive Streak", tint = Color.Gray)
+            }
+            
+            IconButton(
+                onClick = onToggleMarkClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                if (isCompletedToday) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Completed today",
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .border(
+                                width = 3.dp,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                shape = CircleShape
+                            )
+                    )
+                }
             }
         }
     }
@@ -231,11 +283,13 @@ fun StreaksListScreenPreview_Empty() {
     PlaceboTheme {
         StreaksListScreen(
             streaks = emptyList(),
+            completedTodayIds = emptySet(),
             onStreakClicked = {},
             onAddStreak = { _, _ -> },
             onEditStreak = { _, _, _ -> },
             onArchiveStreak = {},
             onRemoveStreak = {},
+            onToggleMarkToday = {},
             onNavigateToArchive = {}
         )
     }
@@ -258,11 +312,13 @@ fun StreaksListScreenPreview_WithData() {
     PlaceboTheme {
         StreaksListScreen(
             streaks = previewStreaks.value,
+            completedTodayIds = setOf(0, 2),
             onStreakClicked = {},
             onAddStreak = { _, _ -> },
             onEditStreak = { _, _, _ -> },
             onArchiveStreak = {},
             onRemoveStreak = { streak -> previewStreaks.value = previewStreaks.value.filterNot { it.id == streak.id } },
+            onToggleMarkToday = {},
             onNavigateToArchive = {}
         )
     }

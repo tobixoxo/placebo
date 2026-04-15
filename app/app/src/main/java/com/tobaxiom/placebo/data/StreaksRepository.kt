@@ -11,6 +11,10 @@ class StreaksRepository(private val streakDao: StreakDao, private val completion
         return completionDao.getCompletionsForStreak(streakId)
     }
 
+    fun getCompletionsForDate(date: Long): Flow<List<Int>> {
+        return completionDao.getCompletionsForDate(date)
+    }
+
     suspend fun getStreakById(id: Int): Streak? {
         return streakDao.getStreakById(id)
     }

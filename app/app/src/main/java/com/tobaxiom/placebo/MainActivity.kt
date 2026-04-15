@@ -59,8 +59,11 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "streakslist") {
                     composable("streakslist") {
                         val streaks by streaksViewModel.activeStreaks.collectAsStateWithLifecycle()
+                        val completedTodayIds by streaksViewModel.completedTodayIds.collectAsStateWithLifecycle()
+                        
                         StreaksListScreen(
                             streaks = streaks,
+                            completedTodayIds = completedTodayIds,
                             onStreakClicked = { streak ->
                                 navController.navigate("streakview/${streak.id}")
                             },
@@ -68,6 +71,13 @@ class MainActivity : ComponentActivity() {
                             onEditStreak = { streak, newName, newIconName -> streaksViewModel.editStreak(streak, newName, newIconName) },
                             onArchiveStreak = { streak -> streaksViewModel.onArchiveStreak(streak) },
                             onRemoveStreak = { streak -> streaksViewModel.onDeletePermanently(streak) },
+                            onToggleMarkToday = { streak ->
+                                if (streak.id in completedTodayIds) {
+                                    streaksViewModel.unmarkToday(streak.id)
+                                } else {
+                                    streaksViewModel.markToday(streak.id)
+                                }
+                            },
                             onNavigateToArchive = { navController.navigate("archive") }
                         )
                     }

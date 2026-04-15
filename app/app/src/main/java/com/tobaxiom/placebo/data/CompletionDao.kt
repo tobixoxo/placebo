@@ -15,4 +15,7 @@ interface CompletionDao {
 
     @Query("SELECT * FROM completions WHERE streakId = :streakId")
     fun getCompletionsForStreak(streakId: Int): Flow<List<Completion>>
+
+    @Query("SELECT streakId FROM completions WHERE date = :date")
+    fun getCompletionsForDate(date: Long): Flow<List<Int>>
 }

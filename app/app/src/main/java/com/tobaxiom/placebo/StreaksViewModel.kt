@@ -36,6 +36,15 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
             initialValue = emptyList()
         )
 
+    val completedTodayIds: StateFlow<Set<Int>> = repository.getCompletionsForDate(
+        LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+    ).map { it.toSet() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptySet()
+        )
+
     // The trigger for the detail screen data flow
     private val _viewedStreakId = MutableStateFlow<Int?>(null)
 
