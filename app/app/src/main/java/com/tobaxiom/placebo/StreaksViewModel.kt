@@ -12,13 +12,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlin.random.Random
 
 class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() {
 
@@ -36,6 +42,7 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
             initialValue = emptyList()
         )
 
+    // Reactive "Today" completion set
     val completedTodayIds: StateFlow<Set<Int>> = repository.getCompletionsForDate(
         LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
     ).map { it.toSet() }
@@ -45,8 +52,10 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
             initialValue = emptySet()
         )
 
-    // The trigger for the detail screen data flow
     private val _viewedStreakId = MutableStateFlow<Int?>(null)
+    private val _viewedMonth = MutableStateFlow(YearMonth.now())
+    
+    val viewedMonth: StateFlow<YearMonth> = _viewedMonth
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val viewedStreakFlow: Flow<Streak?> = _viewedStreakId.flatMapLatest { streakId ->
@@ -60,22 +69,34 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
             initialValue = null
         )
 
-    // The single, authoritative stream of completion data
+    // Optimized flow for fetching only the viewed month's data
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private val viewedStreakCompletions: Flow<List<Completion>> = _viewedStreakId.flatMapLatest { streakId ->
-        streakId?.let { repository.getCompletionsForStreak(it) } ?: flowOf(emptyList())
+    private val monthlyCompletionsFlow: Flow<List<Completion>> = combine(_viewedStreakId, _viewedMonth) { id, month ->
+        id to month
+    }.flatMapLatest { (id, month) ->
+        if (id == null) return@flatMapLatest flowOf(emptyList())
+        val startOfMonth = month.atDay(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+        val endOfMonth = month.atEndOfMonth().atTime(23, 59, 59).toEpochSecond(ZoneOffset.UTC) * 1000
+        repository.getCompletionsForStreakInRange(id, startOfMonth, endOfMonth)
     }
 
-    // The completions for the currently viewed streak
-    val completions: StateFlow<List<Completion>> = viewedStreakCompletions
+    val monthlyCompletions: StateFlow<Set<LocalDate>> = monthlyCompletionsFlow
+        .map { list ->
+            list.map { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }.toSet()
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
+            initialValue = emptySet()
         )
 
-    // The calculated streak counts for the currently viewed streak
-    val streakCounts: StateFlow<Pair<Int, Int>> = viewedStreakCompletions
+    // We still need all completions for overall streak stats calculation
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val allCompletionsFlow: Flow<List<Completion>> = _viewedStreakId.flatMapLatest { streakId ->
+        streakId?.let { repository.getCompletionsForStreak(it) } ?: flowOf(emptyList())
+    }
+
+    val streakCounts: StateFlow<Pair<Int, Int>> = allCompletionsFlow
         .map { calculateStreakCounts(it) }
         .stateIn(
             scope = viewModelScope,
@@ -83,16 +104,54 @@ class StreaksViewModel(private val repository: StreaksRepository) : ViewModel() 
             initialValue = Pair(0, 0)
         )
 
-    /**
-     * Sets the currently viewed streak, triggering the data flow for the detail screen.
-     * Call with null to stop the flow.
-     */
     fun setViewedStreak(streakId: Int?) {
         _viewedStreakId.value = streakId
     }
 
-    fun getStreak(id: Int): Streak? {
-        return activeStreaks.value.find { it.id == id } ?: archivedStreaks.value.find { it.id == id }
+    fun setViewedMonth(month: YearMonth) {
+        _viewedMonth.value = month
+    }
+
+    fun seedData() {
+        if (!BuildConfig.DEBUG) return
+        
+        viewModelScope.launch {
+            // Check if we already have data
+            val existing = repository.activeStreaks.first()
+            if (existing.isNotEmpty()) return@launch
+
+            val habits = listOf(
+                "Workout" to "Fitness",
+                "Reading" to "Book",
+                "Coding" to "Code",
+                "Hydration" to "Hydrate"
+            )
+
+            habits.forEach { (name, icon) ->
+                val startDate = LocalDate.now().minusDays(90)
+                val streak = Streak(
+                    name = name,
+                    iconName = icon,
+                    startDate = startDate.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+                )
+                repository.insert(streak)
+            }
+            
+            // Get the newly inserted streaks and seed completions
+            val streaks = repository.activeStreaks.first()
+            streaks.forEach { s ->
+                for (i in 0..90) {
+                    // 70% chance of completion
+                    if (Random.nextFloat() > 0.3f) {
+                        val date = LocalDate.now().minusDays(i.toLong())
+                        repository.insert(Completion(
+                            streakId = s.id,
+                            date = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
+                        ))
+                    }
+                }
+            }
+        }
     }
 
     fun addStreak(name: String, iconName: String) {

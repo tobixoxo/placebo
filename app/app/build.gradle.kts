@@ -10,10 +10,11 @@ ksp {
 
 android {
     namespace = "com.tobaxiom.placebo"
-    compileSdk = 34
+    compileSdk = 35
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -21,11 +22,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tobaxiom.placebo"
+        applicationId = "com.tobixoxo.placebo"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

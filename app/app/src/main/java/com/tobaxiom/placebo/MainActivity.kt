@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        enableEdgeToEdge()
 
         setContent {
             PlaceboTheme {
@@ -42,6 +45,11 @@ class MainActivity : ComponentActivity() {
                 val permissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
                 ) { isGranted -> }
+
+                // Seed data if in debug mode
+                LaunchedEffect(Unit) {
+                    streaksViewModel.seedData()
+                }
 
                 LaunchedEffect(Unit) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -92,8 +100,6 @@ class MainActivity : ComponentActivity() {
                     composable("streakview/{streakId}") { backStackEntry ->
                         val streakId = backStackEntry.arguments?.getString("streakId")?.toIntOrNull()
                         
-                        // We wrap the destination in a fillMaxSize Box to ensure the transition
-                        // always has a stable, full-screen anchor even while loading data.
                         Box(modifier = Modifier.fillMaxSize()) {
                             if (streakId != null) {
                                 DisposableEffect(streakId) {
@@ -104,17 +110,21 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 val streak by streaksViewModel.viewedStreak.collectAsStateWithLifecycle()
-                                val completions by streaksViewModel.completions.collectAsState()
+                                val completions by streaksViewModel.monthlyCompletions.collectAsStateWithLifecycle()
+                                val viewedMonth by streaksViewModel.viewedMonth.collectAsStateWithLifecycle()
                                 val streakCounts by streaksViewModel.streakCounts.collectAsState()
+                                val completedTodayIds by streaksViewModel.completedTodayIds.collectAsStateWithLifecycle()
 
                                 if (streak != null) {
                                     StreakPage(
                                         streak = streak!!,
-                                        completions = completions,
+                                        isCompletedToday = streakId in completedTodayIds,
+                                        completedDates = completions,
                                         currentStreak = streakCounts.first,
                                         longestStreak = streakCounts.second,
                                         onMarkToday = { streaksViewModel.markToday(streakId) },
                                         onUnmarkToday = { streaksViewModel.unmarkToday(streakId) },
+                                        onMonthChange = { streaksViewModel.setViewedMonth(it) },
                                         onToggleReminder = { isEnabled, reminderTime ->
                                             streaksViewModel.updateReminder(context, streakId, isEnabled, reminderTime)
                                         },

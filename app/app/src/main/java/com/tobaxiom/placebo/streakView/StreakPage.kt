@@ -3,8 +3,12 @@ package com.tobaxiom.placebo.streakView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
@@ -14,6 +18,7 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -24,50 +29,74 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.tobaxiom.placebo.data.Completion
 import com.tobaxiom.placebo.data.Streak
+import com.tobaxiom.placebo.details.MonthlyCalendar
+import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.YearMonth
+import java.time.ZoneId
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StreakPage(
     streak: Streak,
-    completions: List<Completion>,
+    isCompletedToday: Boolean,
+    completedDates: Set<LocalDate>,
     currentStreak: Int,
     longestStreak: Int,
     onMarkToday: () -> Unit,
     onUnmarkToday: () -> Unit,
+    onMonthChange: (YearMonth) -> Unit,
     onToggleReminder: (Boolean, Long?) -> Unit,
     onBackClicked: () -> Unit
 ) {
-    val today = LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000
-    val isTodayMarked = completions.any { it.date == today }
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    // Boundaries: from habit creation month to today
+    val minMonth = remember(streak.startDate) {
+        if (streak.startDate > 0) {
+            YearMonth.from(Instant.ofEpochMilli(streak.startDate).atZone(ZoneId.systemDefault()).toLocalDate())
+        } else {
+            YearMonth.now()
+        }
+    }
+    val maxMonth = YearMonth.now()
+
+    LaunchedEffect(currentMonth) {
+        onMonthChange(currentMonth)
+    }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
                         text = streak.name,
-                        fontSize = 24.sp,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClicked) {
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onBackClicked()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
@@ -76,6 +105,7 @@ fun StreakPage(
                 },
                 actions = {
                     IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         if (streak.isReminderEnabled) {
                             onToggleReminder(false, null)
                         } else {
@@ -92,7 +122,8 @@ fun StreakPage(
         },
         bottomBar = {
             BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentPadding = WindowInsets.safeDrawing.asPaddingValues()
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -102,9 +133,12 @@ fun StreakPage(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
 
-                    if (isTodayMarked) {
+                    if (isCompletedToday) {
                         Button(
-                            onClick = onUnmarkToday,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onUnmarkToday()
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
@@ -114,7 +148,10 @@ fun StreakPage(
                         }
                     } else {
                         Button(
-                            onClick = onMarkToday,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onMarkToday()
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
@@ -130,19 +167,33 @@ fun StreakPage(
         Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize()
         ) {
-            StreakCalendar(completions = completions, modifier = Modifier.padding(bottom = 16.dp))
+            MonthlyCalendar(
+                currentMonth = currentMonth,
+                minMonth = minMonth,
+                maxMonth = maxMonth,
+                completedDates = completedDates,
+                onMonthChange = { currentMonth = it },
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                ),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(24.dp),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    StatItem(label = "Current Streak", value = currentStreak.toString())
-                    StatItem(label = "Longest Streak", value = longestStreak.toString())
+                    StatItem(label = "Current", value = currentStreak.toString())
+                    StatItem(label = "Longest", value = longestStreak.toString())
                 }
             }
             
@@ -152,8 +203,9 @@ fun StreakPage(
                 val minute = calendar.get(Calendar.MINUTE)
                 Text(
                     text = "Reminder set for ${String.format("%02d:%02d", hour, minute)}",
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium
+                    modifier = Modifier.padding(top = 16.dp, start = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -162,9 +214,13 @@ fun StreakPage(
     if (showTimePicker) {
         val timePickerState = rememberTimePickerState()
         AlertDialog(
-            onDismissRequest = { showTimePicker = false },
+            onDismissRequest = { 
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                showTimePicker = false 
+            },
             confirmButton = {
                 Button(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     val calendar = Calendar.getInstance().apply {
                         set(Calendar.HOUR_OF_DAY, timePickerState.hour)
                         set(Calendar.MINUTE, timePickerState.minute)
@@ -178,7 +234,10 @@ fun StreakPage(
                 }
             },
             dismissButton = {
-                Button(onClick = { showTimePicker = false }) {
+                Button(onClick = { 
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    showTimePicker = false 
+                }) {
                     Text("Cancel")
                 }
             },
@@ -192,7 +251,17 @@ fun StreakPage(
 @Composable
 fun StatItem(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(text = value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(
+            text = label, 
+            style = MaterialTheme.typography.labelLarge, 
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value, 
+            style = MaterialTheme.typography.displaySmall, 
+            fontWeight = FontWeight.ExtraBold, 
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
